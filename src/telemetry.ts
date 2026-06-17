@@ -15,7 +15,7 @@ export function sendImpressionBeacon(
       adId,
       timestamp: Date.now(),
     }),
-  }).catch((err) => {
+  }).catch((err: unknown) => {
     console.debug('Background tracking beacon dropped safely: ', err);
   });
 }
