@@ -1,0 +1,39 @@
+{
+  "name": "waitstate.ad-status",
+  "displayName": "Waitstate Ad Status",
+  "description": "Subtle non-intrusive status bar display for developer-focused ad placement updates.",
+  "version": "1.0.0",
+  "publisher": "waitstate",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Waitstate",
+      "properties": {
+        "waitstate.publisherId": {
+          "type": "string",
+          "default": "",
+          "description": "Your unique ad marketplace publisher ID token used for routing telemetry impressions."
+        },
+        "waitstate.apiBaseUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8787",
+          "description": "Base URL for the Waitstate impression-ingest worker (fetch-ad and impression endpoints)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3"
+  }
+}
