@@ -22,7 +22,7 @@
         "waitstate.apiBaseUrl": {
           "type": "string",
           "default": "http://127.0.0.1:8787",
-          "description": "Base URL for the Waitstate impression-ingest worker (fetch-ad and impression endpoints)."
+          "description": "Waitstate API base URL."
         }
       }
     }
