@@ -1,11 +1,13 @@
 import * as vscode from 'vscode';
-import { sendImpressionBeacon } from './telemetry';
+import { sendClickBeacon, sendImpressionBeacon } from './telemetry';
 
 type AdResponse = {
   id: string;
   text: string;
   campaignId: string;
   url: string;
+  brandName?: string;
+  iconUrl?: string;
 };
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -29,6 +31,21 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(adStatusBarItem);
 
   fetchAndDisplayAd(publisherId, apiBaseUrl, adStatusBarItem);
+
+  const openAdDisposable = vscode.commands.registerCommand(
+    'waitstate.openAd',
+    async (
+      url: string,
+      pubId: string,
+      campaignId: string,
+      adId: string,
+      baseUrl: string,
+    ) => {
+      sendClickBeacon(baseUrl, pubId, campaignId, adId);
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    },
+  );
+  context.subscriptions.push(openAdDisposable);
 }
 
 async function fetchAndDisplayAd(
@@ -59,8 +76,8 @@ async function fetchAndDisplayAd(
     statusBar.tooltip = `Click to view sponsor: ${ad.url}`;
     statusBar.command = {
       title: 'Open Ad URL',
-      command: 'vscode.open',
-      arguments: [vscode.Uri.parse(ad.url)],
+      command: 'waitstate.openAd',
+      arguments: [ad.url, publisherId, ad.campaignId, ad.id, apiBaseUrl],
     };
     statusBar.show();
 
