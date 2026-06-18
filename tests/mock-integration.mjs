@@ -1,7 +1,7 @@
 /**
  * Smoke test — simulates the extension ad fetch and impression flow.
  *
- * Usage: node scripts/mock-integration.mjs [apiBaseUrl]
+ * Usage: node tests/mock-integration.mjs [apiBaseUrl]
  */
 
 const API_BASE = process.argv[2] ?? 'http://127.0.0.1:8787';
@@ -77,7 +77,10 @@ async function testExtensionLifecycle() {
 
   const impressionRes = await fetch(`${API_BASE}/impression`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${PUBLISHER_ID}`,
+    },
     body: JSON.stringify({
       publisherId: PUBLISHER_ID,
       campaignId: ad.campaignId,
@@ -92,8 +95,8 @@ async function testExtensionLifecycle() {
   assert(impressionBody.publisherId === PUBLISHER_ID, 'impression echoes publisherId');
 }
 
-async function testImpressionNoAuthHeader() {
-  console.log('\n[impression: no Authorization header regression]');
+async function testImpressionRequiresAuth() {
+  console.log('\n[impression: requires Bearer auth]');
   const res = await fetch(`${API_BASE}/impression`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -104,9 +107,7 @@ async function testImpressionNoAuthHeader() {
       timestamp: Date.now(),
     }),
   });
-  const body = await res.json();
-  assert(res.status === 202, 'POST /impression works without Authorization header');
-  assert(body.ok === true, 'impression accepted without Bearer');
+  assert(res.status === 401, 'POST /impression without Authorization returns 401');
 }
 
 async function testFetchAdTimeoutGuard() {
@@ -142,7 +143,7 @@ async function main() {
     await testFetchAdUnauthorized();
     await testFetchAdBlocked();
     await testExtensionLifecycle();
-    await testImpressionNoAuthHeader();
+    await testImpressionRequiresAuth();
     await testFetchAdTimeoutGuard();
   } catch (err) {
     console.error('\nFatal:', err.message);

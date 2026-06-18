@@ -1,4 +1,10 @@
 import * as vscode from 'vscode';
+import { resolvePublisherId, storePublisherId } from './publisherId';
+import {
+  isAllowedApiBaseUrl,
+  isSafeExternalUrl,
+  sanitizeStatusBarText,
+} from './security';
 import { sendClickBeacon, sendImpressionBeacon } from './telemetry';
 
 type AdResponse = {
@@ -16,17 +22,21 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const config = vscode.workspace.getConfiguration('waitstate');
-  const publisherId =
-    config.get<string>('publisherId')?.trim() ||
-    process.env.WAITSTATE_PUBLISHER_ID?.trim() ||
-    '';
+  const publisherId = await resolvePublisherId(context);
   const apiBaseUrl =
     config.get<string>('apiBaseUrl') ||
     process.env.WAITSTATE_API_BASE_URL ||
     'http://127.0.0.1:8787';
 
-  if (!publisherId || publisherId.trim() === '') {
+  if (!publisherId) {
     console.log('Ad Engine Suspended: publisherId has not been configured.');
+    return;
+  }
+
+  if (!isAllowedApiBaseUrl(apiBaseUrl)) {
+    console.log(
+      'Ad Engine Suspended: apiBaseUrl must use HTTPS (HTTP is only allowed for localhost).',
+    );
     return;
   }
 
@@ -38,6 +48,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
   fetchAndDisplayAd(publisherId, apiBaseUrl, adStatusBarItem);
 
+  const setPublisherIdDisposable = vscode.commands.registerCommand(
+    'waitstate.setPublisherId',
+    async () => {
+      const value = await vscode.window.showInputBox({
+        prompt: 'Enter your Waitstate publisher ID',
+        password: true,
+        ignoreFocusOut: true,
+      });
+      if (!value?.trim()) {
+        return;
+      }
+      await storePublisherId(context, value);
+      vscode.window.showInformationMessage(
+        'Waitstate publisher ID saved securely.',
+      );
+    },
+  );
+  context.subscriptions.push(setPublisherIdDisposable);
+
   const openAdDisposable = vscode.commands.registerCommand(
     'waitstate.openAd',
     async (
@@ -47,6 +76,10 @@ export async function activate(context: vscode.ExtensionContext) {
       adId: string,
       baseUrl: string,
     ) => {
+      if (!isSafeExternalUrl(url)) {
+        console.debug('Blocked opening non-HTTPS sponsor URL.');
+        return;
+      }
       sendClickBeacon(baseUrl, pubId, campaignId, adId);
       await vscode.env.openExternal(vscode.Uri.parse(url));
     },
@@ -77,8 +110,17 @@ async function fetchAndDisplayAd(
     }
 
     const ad = (await response.json()) as AdResponse;
+    if (!isSafeExternalUrl(ad.url)) {
+      console.debug('Skipped ad with non-HTTPS sponsor URL.');
+      return;
+    }
 
-    statusBar.text = `$(megaphone) ${ad.text}`;
+    const displayText = sanitizeStatusBarText(ad.text);
+    if (!displayText) {
+      return;
+    }
+
+    statusBar.text = `$(megaphone) ${displayText}`;
     statusBar.tooltip = `Click to view sponsor: ${ad.url}`;
     statusBar.command = {
       title: 'Open Ad URL',

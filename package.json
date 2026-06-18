@@ -11,18 +11,24 @@
   "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "waitstate.setPublisherId",
+        "title": "Waitstate: Set Publisher ID"
+      }
+    ],
     "configuration": {
       "title": "Waitstate",
       "properties": {
         "waitstate.publisherId": {
           "type": "string",
           "default": "",
-          "description": "Your unique ad marketplace publisher ID token used for routing telemetry impressions."
+          "markdownDescription": "Deprecated — use the **Waitstate: Set Publisher ID** command instead. Your publisher ID is stored in VS Code Secret Storage, not in settings. You can also set `WAITSTATE_PUBLISHER_ID` in your environment."
         },
         "waitstate.apiBaseUrl": {
           "type": "string",
           "default": "http://127.0.0.1:8787",
-          "description": "Waitstate API base URL."
+          "description": "Waitstate API base URL. Production endpoints must use HTTPS; HTTP is only allowed for localhost development."
         }
       }
     }

@@ -1,3 +1,25 @@
+import { toSafeErrorMessage } from './security';
+
+function beaconHeaders(publisherId: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${publisherId}`,
+  };
+}
+
+function beaconBody(
+  publisherId: string,
+  campaignId: string,
+  adId: string,
+): string {
+  return JSON.stringify({
+    publisherId,
+    campaignId,
+    adId,
+    timestamp: Date.now(),
+  });
+}
+
 export function sendImpressionBeacon(
   apiBaseUrl: string,
   publisherId: string,
@@ -6,17 +28,13 @@ export function sendImpressionBeacon(
 ) {
   fetch(`${apiBaseUrl}/impression`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      publisherId,
-      campaignId,
-      adId,
-      timestamp: Date.now(),
-    }),
+    headers: beaconHeaders(publisherId),
+    body: beaconBody(publisherId, campaignId, adId),
   }).catch((err: unknown) => {
-    console.debug('Background tracking beacon dropped safely: ', err);
+    console.debug(
+      'Background impression beacon dropped safely:',
+      toSafeErrorMessage(err),
+    );
   });
 }
 
@@ -28,16 +46,12 @@ export function sendClickBeacon(
 ) {
   fetch(`${apiBaseUrl}/click`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      publisherId,
-      campaignId,
-      adId,
-      timestamp: Date.now(),
-    }),
+    headers: beaconHeaders(publisherId),
+    body: beaconBody(publisherId, campaignId, adId),
   }).catch((err: unknown) => {
-    console.debug('Background click beacon dropped safely: ', err);
+    console.debug(
+      'Background click beacon dropped safely:',
+      toSafeErrorMessage(err),
+    );
   });
 }
