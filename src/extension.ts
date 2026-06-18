@@ -16,8 +16,14 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const config = vscode.workspace.getConfiguration('waitstate');
-  const publisherId = config.get<string>('publisherId');
-  const apiBaseUrl = config.get<string>('apiBaseUrl') ?? 'http://127.0.0.1:8787';
+  const publisherId =
+    config.get<string>('publisherId')?.trim() ||
+    process.env.WAITSTATE_PUBLISHER_ID?.trim() ||
+    '';
+  const apiBaseUrl =
+    config.get<string>('apiBaseUrl') ||
+    process.env.WAITSTATE_API_BASE_URL ||
+    'http://127.0.0.1:8787';
 
   if (!publisherId || publisherId.trim() === '') {
     console.log('Ad Engine Suspended: publisherId has not been configured.');

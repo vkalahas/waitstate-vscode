@@ -5,7 +5,14 @@
       "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}"]
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "${workspaceFolder}"
+      ],
+      "env": {
+        "WAITSTATE_PUBLISHER_ID": "pub-dev-test",
+        "WAITSTATE_API_BASE_URL": "http://127.0.0.1:8787"
+      }
     }
   ]
 }
